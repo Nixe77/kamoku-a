@@ -1,0 +1,9 @@
+# backups / intermediate
+*.bak_*
+_mr_*
+_mr_processed/
+# OS
+Thumbs.db
+.DS_Store
+# local tooling
+.claude/

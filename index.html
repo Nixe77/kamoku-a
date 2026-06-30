@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>科目A免除試験 対策問題集</title>
+<style>
+:root{
+  --bg:#f3f5fb; --card:#ffffff; --ink:#1f2540; --sub:#6b7390;
+  --line:#e3e7f3; --accent:#4f5bd5; --accent2:#6a78ff;
+  --ok:#0e9f6e; --okbg:#e6f7f0; --ng:#e02424; --ngbg:#fdeaea;
+  --warn:#b45309; --warnbg:#fff6e6;
+  --tech:#2563eb; --mng:#0e9f6e; --str:#7c3aed;
+  --shadow:0 6px 24px rgba(40,50,110,.10);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  background:linear-gradient(180deg,#eef1fb,#f6f7fc); color:var(--ink);
+  line-height:1.7; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:760px;margin:0 auto;padding:18px 16px 60px}
+.hidden{display:none!important}
+button{font-family:inherit;cursor:pointer}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.6}
+.b-tech{background:#e7efff;color:var(--tech)}
+.b-mng{background:#e6f7f0;color:var(--mng)}
+.b-str{background:#f1e9ff;color:var(--str)}
+.b-topic{background:#eef0f7;color:var(--sub)}
+
+.top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.top h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.02em}
+.top .sp{flex:1}
+.linkbtn{background:none;border:1px solid var(--line);color:var(--sub);padding:6px 12px;border-radius:10px;font-size:13px;font-weight:700}
+.linkbtn:hover{background:#fff}
+
+.hero{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:26px 22px;box-shadow:var(--shadow)}
+.hero h2{margin:0 0 4px;font-size:22px;font-weight:800}
+.hero p.lead{margin:0 0 18px;color:var(--sub);font-size:14px}
+.stat{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+.stat .pill{flex:1;min-width:90px;background:#f7f8fd;border:1px solid var(--line);border-radius:14px;padding:12px 10px;text-align:center}
+.stat .pill b{display:block;font-size:22px;font-weight:800}
+.stat .pill span{font-size:12px;color:var(--sub)}
+.fld{margin-bottom:18px}
+.fld>label{display:block;font-size:13px;font-weight:800;color:var(--sub);margin-bottom:8px}
+.opts{display:flex;gap:10px;flex-wrap:wrap}
+.opt{flex:1;min-width:84px;border:2px solid var(--line);background:#fff;border-radius:14px;padding:12px 8px;text-align:center;font-weight:700;font-size:15px;transition:.12s;color:var(--ink)}
+.opt small{display:block;font-weight:600;font-size:11px;color:var(--sub);margin-top:2px}
+.opt.sel{border-color:var(--accent);background:linear-gradient(180deg,#f4f5ff,#eef0ff);color:var(--accent);box-shadow:0 2px 10px rgba(79,91,213,.15)}
+.startbtn{width:100%;border:none;border-radius:16px;padding:16px;font-size:17px;font-weight:800;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 8px 22px rgba(79,91,213,.35)}
+.startbtn:active{transform:translateY(1px)}
+.note{font-size:12px;color:var(--sub);margin-top:14px;line-height:1.6}
+
+.qbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;color:var(--sub)}
+.qbar .prog{flex:1;height:8px;background:#e6e9f5;border-radius:999px;overflow:hidden}
+.qbar .prog>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;transition:.3s}
+.qbar .sc{font-weight:800;color:var(--ink)}
+.simbar{background:linear-gradient(135deg,#fff6e6,#fff0d6);border:1px solid #ffe1ad;color:var(--warn);
+  border-radius:12px;padding:8px 14px;font-weight:800;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 20px;box-shadow:var(--shadow)}
+.meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.meta .src{margin-left:auto;font-size:12px;color:var(--sub)}
+.qtext{font-size:16.5px;font-weight:600;margin:6px 0 4px;white-space:pre-wrap}
+.qtext sup{font-size:.72em} .qtext sub{font-size:.72em}
+
+.choices{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.choice{display:flex;align-items:flex-start;gap:12px;text-align:left;width:100%;
+  border:2px solid var(--line);background:#fff;border-radius:14px;padding:13px 15px;font-size:15px;color:var(--ink);transition:.1s}
+.choice:hover:not(:disabled){border-color:var(--accent2);background:#fafbff}
+.choice:disabled{cursor:default}
+.choice .lt{flex:none;width:26px;height:26px;border-radius:8px;background:#eef0f7;color:var(--sub);
+  font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}
+.choice .ct{flex:1;padding-top:1px}
+.choice.correct{border-color:var(--ok);background:var(--okbg)}
+.choice.correct .lt{background:var(--ok);color:#fff}
+.choice.wrong{border-color:var(--ng);background:var(--ngbg)}
+.choice.wrong .lt{background:var(--ng);color:#fff}
+.choice.correct .ct{font-weight:700}
+
+.fb{margin-top:18px;border-radius:16px;padding:16px 16px;border:1px solid}
+.fb.ok{background:var(--okbg);border-color:#bce8d5}
+.fb.ng{background:var(--ngbg);border-color:#f6c9c9}
+.fb .head{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.fb.ok .head{color:var(--ok)} .fb.ng .head{color:var(--ng)}
+.ansline{background:#fff;border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:10px;border:1px solid var(--line)}
+.ansline b{color:var(--ok)}
+.expl{font-size:14px}
+.expl .tag{display:inline-block;font-weight:800;font-size:12px;color:var(--warn);background:var(--warnbg);
+  border-radius:8px;padding:1px 8px;margin-right:6px}
+.expl sup{font-size:.72em} .expl sub{font-size:.72em}
+.nextbtn{margin-top:16px;width:100%;border:none;border-radius:14px;padding:14px;font-size:16px;font-weight:800;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 6px 18px rgba(79,91,213,.3)}
+.nextbtn:active{transform:translateY(1px)}
+
+.res h2{font-size:22px;margin:0 0 2px}
+.scorebig{font-size:46px;font-weight:800;text-align:center;margin:10px 0 0}
+.scoresub{text-align:center;color:var(--sub);margin-bottom:6px}
+.passbox{text-align:center;font-weight:800;border-radius:12px;padding:8px;margin:6px 0 4px;font-size:14px}
+.pass{background:var(--okbg);color:var(--ok)} .fail{background:var(--ngbg);color:var(--ng)}
+.radarsum{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:2px 0 8px;font-size:13.5px;font-weight:800}
+.radarsum span{background:#f7f8fd;border:1px solid var(--line);border-radius:999px;padding:4px 12px}
+.radarsum .good{color:var(--ok);border-color:#bce8d5;background:var(--okbg)}
+.radarsum .bad{color:var(--ng);border-color:#f6c9c9;background:var(--ngbg)}
+.radarbox{background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px 4px 4px;margin:4px auto 10px;max-width:380px}
+.radarbox svg{display:block;width:100%;height:auto}
+.radarmin{color:var(--sub);font-size:13px;text-align:center;padding:12px;background:#f7f8fd;border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+.topiclist{margin-top:8px}
+.trow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.trow .tn{flex:1}
+.trow .bar{flex:none;width:120px;height:8px;background:#eceefa;border-radius:999px;overflow:hidden}
+.trow .bar>i{display:block;height:100%;border-radius:999px}
+.trow .pc{flex:none;width:46px;text-align:right;font-weight:800;font-size:13px}
+.secttl{font-weight:800;font-size:15px;margin:22px 0 6px}
+.wrongq{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:13.5px}
+.wrongq .wq{font-weight:700;margin-bottom:4px}
+.wrongq .wa{color:var(--ok);font-weight:700}
+.btnrow{display:flex;gap:10px;margin-top:20px}
+.btnrow button{flex:1;border-radius:14px;padding:14px;font-size:15px;font-weight:800}
+.btn-pri{border:none;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.btn-sec{border:1px solid var(--line);background:#fff;color:var(--ink)}
+.foot{text-align:center;color:var(--sub);font-size:11px;margin-top:26px;line-height:1.6}
+@media(max-width:480px){ .hero{padding:20px 16px} .card{padding:18px 15px} .qtext{font-size:15.5px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>📗 科目A免除試験 対策</h1>
+    <div class="sp"></div>
+    <button class="linkbtn hidden" id="quitBtn">終了</button>
+  </div>
+
+  <!-- ========== START ========== -->
+  <section id="startScreen">
+    <div class="hero">
+      <h2>科目A 対策トレーニング</h2>
+      <p class="lead">サーティファイ 科目A免除修了試験（基本情報技術者試験 科目A 相当）／四肢択一</p>
+      <div class="stat">
+        <div class="pill"><b id="stTotal">–</b><span>収録問題</span></div>
+        <div class="pill"><b id="stTech">–</b><span>テクノロジ</span></div>
+        <div class="pill"><b id="stMng">–</b><span>マネジメント</span></div>
+        <div class="pill"><b id="stStr">–</b><span>ストラテジ</span></div>
+      </div>
+      <div class="fld">
+        <label>モード</label>
+        <div class="opts" id="modeOpts">
+          <button class="opt sel" data-mode="cat">📚 カテゴリ別練習</button>
+          <button class="opt" data-mode="mock">📝 模擬試験（ランダム50問）</button>
+        </div>
+      </div>
+      <div id="catOptsWrap">
+      <div class="fld">
+        <label>出題カテゴリ</label>
+        <div class="opts" id="catOpts">
+          <button class="opt sel" data-cat="all">🔀 すべて<small id="cAll"></small></button>
+          <button class="opt" data-cat="テクノロジ">💻 テクノロジ系<small id="cTech"></small></button>
+          <button class="opt" data-cat="マネジメント">📋 マネジメント系<small id="cMng"></small></button>
+          <button class="opt" data-cat="ストラテジ">📊 ストラテジ系<small id="cStr"></small></button>
+        </div>
+      </div>
+      <div class="fld">
+        <label>出題数</label>
+        <div class="opts" id="lenOpts">
+          <button class="opt sel" data-len="10">10問</button>
+          <button class="opt" data-len="20">20問</button>
+          <button class="opt" data-len="all">すべて<small id="allCnt"></small></button>
+        </div>
+      </div>
+      </div>
+      <div id="mockNote" class="note hidden" style="background:#fff6e6;border:1px solid #ffe1ad;border-radius:12px;padding:12px 14px;color:var(--warn);font-weight:600;margin-bottom:18px">
+        🕒 全分野からランダムに50問を出題します（収録数が50未満のときは全問）。本番は60問90分・60%で合格。<br>毎回出題順と選択肢がシャッフルされます。
+      </div>
+      <button class="startbtn" id="goBtn">練習をはじめる ▶</button>
+      <p class="note">
+        ✓ 解答後にすぐ正誤判定＋解説を表示<br>
+        ✓ 選択肢は毎回シャッフル<br>
+        ✓ 結果画面で分野別の正答率を確認<br>
+        ✓ 間違えた問題だけをまとめて復習できます
+      </p>
+    </div>
+  </section>
+
+  <!-- ========== QUIZ ========== -->
+  <section id="quizScreen" class="hidden">
+    <div class="qbar">
+      <span>第 <b id="qIdx">1</b>/<span id="qTot">10</span> 問</span>
+      <div class="prog"><i id="progBar" style="width:0%"></i></div>
+      <span class="sc" id="scoreLbl">0 / 0</span>
+    </div>
+    <div id="mockBanner" class="simbar hidden">📝 模擬試験モード — 全分野ランダム50問</div>
+    <div class="card">
+      <div class="meta">
+        <span class="badge" id="catBadge">テクノロジ</span>
+        <span class="badge b-topic" id="topicBadge">トピック</span>
+        <span class="src" id="srcLbl"></span>
+      </div>
+      <div class="qtext" id="qText"></div>
+      <div class="choices" id="choices"></div>
+      <div id="feedback"></div>
+    </div>
+  </section>
+
+  <!-- ========== RESULT ========== -->
+  <section id="resultScreen" class="hidden">
+    <div class="hero res">
+      <h2>おつかれさま！</h2>
+      <div class="scorebig" id="resScore">0%</div>
+      <div class="scoresub" id="resSub">0 / 0 問 正解</div>
+      <div id="passBox"></div>
+      <div class="secttl">🎯 得意・苦手マップ</div>
+      <div id="radarSum" class="radarsum"></div>
+      <div id="radarWrap"></div>
+      <div class="secttl">📊 分野別 正答率（苦手な順）</div>
+      <div class="topiclist" id="topicResult"></div>
+      <div id="wrongSect"></div>
+      <div class="btnrow">
+        <button class="btn-sec" id="shareBtn">📤 結果を共有</button>
+        <button class="btn-sec" id="retryWrong">間違えた問題だけ復習</button>
+        <button class="btn-pri" id="againBtn">もう一度</button>
+      </div>
+    </div>
+    <p class="foot">学習用に作成したオリジナル問題です。本番の出題範囲は基本情報技術者試験 科目A に準拠。</p>
+  </section>
+</div>
+
+<script src="data.js"></script>
+<script>
+"use strict";
+const Q = (window.QUESTIONS||[]);
+const MOCK_N = 50;
+const PASS_PCT = 60;
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(s){
+  s = esc(s);
+  s = s.replace(/\^(-?[0-9A-Za-z]+)/g,'<sup>$1</sup>');
+  s = s.replace(/(?<=[A-Za-z])_([0-9]+)/g,'<sub>$1</sub>');
+  s = s.replace(/\n/g,'<br>');
+  return s;
+}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const LT=['ア','イ','ウ','エ'];
+function $(id){return document.getElementById(id);}
+function catClass(c){return c==='テクノロジ'?'b-tech':c==='マネジメント'?'b-mng':'b-str';}
+function catLabel(c){return c==='テクノロジ'?'テクノロジ系':c==='マネジメント'?'マネジメント系':'ストラテジ系';}
+
+/* ---------- 分野（レーダー軸）定義 ---------- */
+const FIELDS=[
+  {key:'基礎理論',     short:'基礎理論'},
+  {key:'アルゴリズム', short:'アルゴ'},
+  {key:'コンピュータ構成', short:'構成'},
+  {key:'ソフトウェア', short:'ソフト'},
+  {key:'データベース', short:'DB'},
+  {key:'ネットワーク', short:'NW'},
+  {key:'セキュリティ', short:'セキュ'},
+  {key:'開発技術',     short:'開発'},
+  {key:'マネジメント', short:'管理'},
+  {key:'ストラテジ',   short:'戦略'}
+];
+const FIELD_MAP={
+  '基数変換':'基礎理論','補数':'基礎理論','論理演算':'基礎理論','確率・統計':'基礎理論','情報量・符号化':'基礎理論',
+  'データ構造':'アルゴリズム','探索アルゴリズム':'アルゴリズム','整列アルゴリズム':'アルゴリズム','計算量':'アルゴリズム','アルゴリズム':'アルゴリズム',
+  'CPU':'コンピュータ構成','記憶階層・キャッシュ':'コンピュータ構成','CPU高速化':'コンピュータ構成','入出力':'コンピュータ構成','稼働率':'コンピュータ構成','RAID':'コンピュータ構成','性能評価':'コンピュータ構成',
+  'OS・タスク管理':'ソフトウェア','仮想記憶':'ソフトウェア','仮想記憶・ページング':'ソフトウェア','プロセス管理':'ソフトウェア',
+  '正規化':'データベース','SQL':'データベース','トランザクション':'データベース','排他制御':'データベース',
+  'OSI参照モデル':'ネットワーク','TCP/IP':'ネットワーク','IPアドレス':'ネットワーク','アプリケーション層プロトコル':'ネットワーク','DNS':'ネットワーク',
+  '暗号方式':'セキュリティ','公開鍵暗号':'セキュリティ','ディジタル署名':'セキュリティ','認証':'セキュリティ','攻撃手法':'セキュリティ','マルウェア':'セキュリティ','情報セキュリティ':'セキュリティ',
+  '開発モデル':'開発技術','アジャイル':'開発技術','テスト':'開発技術',
+  'プロジェクトマネジメント':'マネジメント','日程計画':'マネジメント','進捗管理':'マネジメント','サービスマネジメント':'マネジメント','システム監査':'マネジメント',
+  '調達':'ストラテジ','経営戦略・分析手法':'ストラテジ','経営戦略':'ストラテジ','マーケティング':'ストラテジ','会計・財務':'ストラテジ','知的財産権':'ストラテジ','労働関連法規':'ストラテジ','標準化':'ストラテジ'
+};
+function fieldOf(q){return FIELD_MAP[q.topic] || catLabel(q.cat);}
+
+/* ---------- レーダーチャート（SVG） ---------- */
+function renderRadar(fields){
+  const n=fields.length;
+  const W=360,H=300,cx=W/2,cy=H/2,R=92;
+  const ang=i=>(-Math.PI/2 + i*2*Math.PI/n);
+  const P=(i,r)=>[cx+Math.cos(ang(i))*r, cy+Math.sin(ang(i))*r];
+  const colOf=p=>p>=80?'#0e9f6e':p>=60?'#b45309':'#e02424';
+  let g='';
+  [0.25,0.5,0.75,1].forEach(f=>{
+    const pts=fields.map((_,i)=>P(i,R*f).map(v=>v.toFixed(1)).join(',')).join(' ');
+    g+='<polygon points="'+pts+'" fill="'+(f===1?'#fafbff':'none')+'" stroke="#e3e7f3" stroke-width="1"/>';
+  });
+  fields.forEach((_,i)=>{const [x,y]=P(i,R);g+='<line x1="'+cx+'" y1="'+cy+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="#e3e7f3" stroke-width="1"/>';});
+  const dpts=fields.map((f,i)=>P(i,R*(Math.max(f.pct,0)/100)).map(v=>v.toFixed(1)).join(',')).join(' ');
+  g+='<polygon points="'+dpts+'" fill="rgba(79,91,213,.20)" stroke="#4f5bd5" stroke-width="2" stroke-linejoin="round"/>';
+  fields.forEach((f,i)=>{
+    const [vx,vy]=P(i,R*(Math.max(f.pct,0)/100));
+    const col=colOf(f.pct);
+    g+='<circle cx="'+vx.toFixed(1)+'" cy="'+vy.toFixed(1)+'" r="3.5" fill="'+col+'"/>';
+    const [lx,ly]=P(i,R+15);
+    const c=Math.cos(ang(i));
+    const anchor=c>0.25?'start':c<-0.25?'end':'middle';
+    g+='<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="'+anchor+'" font-size="10.5" font-weight="700" fill="#1f2540" dominant-baseline="middle">'+esc(f.short)+'</text>';
+    g+='<text x="'+lx.toFixed(1)+'" y="'+(ly+12).toFixed(1)+'" text-anchor="'+anchor+'" font-size="9.5" font-weight="800" fill="'+col+'" dominant-baseline="middle">'+f.pct+'%</text>';
+  });
+  return '<div class="radarbox"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'+g+'</svg></div>';
+}
+
+let settings={mode:'cat',cat:'all',len:'10'};
+let mains=[];          // [{q, choices(shuffled), ans(new idx)}]
+let pos=0;
+let curItem=null;
+let answered=false;
+let score={c:0,t:0};
+let log=[];
+
+/* ---------- start screen ---------- */
+function countCat(c){return Q.filter(q=>q.cat===c).length;}
+function initStart(){
+  $('stTotal').textContent=Q.length;
+  $('stTech').textContent=countCat('テクノロジ');
+  $('stMng').textContent=countCat('マネジメント');
+  $('stStr').textContent=countCat('ストラテジ');
+  $('cAll').textContent='（'+Q.length+'問）';
+  $('cTech').textContent='（'+countCat('テクノロジ')+'問）';
+  $('cMng').textContent='（'+countCat('マネジメント')+'問）';
+  $('cStr').textContent='（'+countCat('ストラテジ')+'問）';
+  updateAllCnt(); updateGoBtn();
+}
+function poolFor(cat){return Q.filter(q=>cat==='all'||q.cat===cat);}
+function updateAllCnt(){$('allCnt').textContent='（'+poolFor(settings.cat).length+'問）';}
+function updateGoBtn(){
+  $('goBtn').textContent = settings.mode==='mock'
+    ? '📝 模擬試験をはじめる（'+Math.min(MOCK_N,Q.length)+'問）▶'
+    : '練習をはじめる ▶';
+}
+$('catOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b)return;
+  [...$('catOpts').children].forEach(o=>o.classList.remove('sel'));b.classList.add('sel');settings.cat=b.dataset.cat;updateAllCnt();});
+$('lenOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b)return;
+  [...$('lenOpts').children].forEach(o=>o.classList.remove('sel'));b.classList.add('sel');settings.len=b.dataset.len;});
+$('modeOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b)return;
+  [...$('modeOpts').children].forEach(o=>o.classList.remove('sel'));b.classList.add('sel');settings.mode=b.dataset.mode;
+  $('catOptsWrap').classList.toggle('hidden',settings.mode==='mock');
+  $('mockNote').classList.toggle('hidden',settings.mode!=='mock');
+  updateGoBtn();});
+$('goBtn').addEventListener('click',()=>buildSession());
+
+/* ---------- build a session ---------- */
+function prep(q){
+  // 選択肢をシャッフルして正解インデックスを付け替える
+  const idx=q.choices.map((c,i)=>i);
+  const sh=shuffle(idx);
+  const choices=sh.map(i=>q.choices[i]);
+  const ans=sh.indexOf(q.answer);
+  return {q,choices,ans};
+}
+function buildSession(restrict){
+  let pool;
+  if(settings.mode==='mock'){
+    pool=shuffle(Q.slice());
+    pool=pool.slice(0,Math.min(MOCK_N,pool.length));
+  }else{
+    pool=poolFor(settings.cat);
+    if(restrict) pool=pool.filter(q=>restrict.has(q.id));
+    pool=shuffle(pool);
+    let lim=settings.len;
+    if(lim!=='all'){lim=parseInt(lim,10); if(pool.length>lim) pool=pool.slice(0,lim);}
+  }
+  mains=pool.map(prep);
+  pos=0;answered=false;score={c:0,t:0};log=[];
+  $('startScreen').classList.add('hidden');
+  $('resultScreen').classList.add('hidden');
+  $('quizScreen').classList.remove('hidden');
+  $('quitBtn').classList.remove('hidden');
+  $('mockBanner').classList.toggle('hidden',settings.mode!=='mock');
+  $('qTot').textContent=mains.length;
+  showCurrent();
+}
+
+/* ---------- render ---------- */
+function showCurrent(){
+  answered=false;
+  curItem=mains[pos];
+  const q=curItem.q;
+  $('qIdx').textContent=pos+1;
+  $('progBar').style.width=(pos/Math.max(mains.length,1)*100)+'%';
+  $('scoreLbl').textContent=score.c+' / '+score.t;
+  const cb=$('catBadge'); cb.textContent=catLabel(q.cat); cb.className='badge '+catClass(q.cat);
+  $('topicBadge').textContent=q.topic;
+  $('srcLbl').textContent='問'+(pos+1);
+  $('qText').innerHTML=fmt(q.question);
+  const cc=$('choices'); cc.innerHTML='';
+  curItem.choices.forEach((c,i)=>{
+    const b=document.createElement('button'); b.className='choice';
+    b.innerHTML='<span class="lt">'+LT[i]+'</span><span class="ct">'+fmt(c)+'</span>';
+    b.addEventListener('click',()=>pick(i));
+    cc.appendChild(b);
+  });
+  $('feedback').innerHTML='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ---------- answer ---------- */
+function pick(idx){
+  if(answered)return; answered=true;
+  const it=curItem; const q=it.q; const correct=(idx===it.ans);
+  score.t++; if(correct)score.c++;
+  log.push({cat:q.cat, correct, item:it, picked:idx});
+  $('scoreLbl').textContent=score.c+' / '+score.t;
+  const btns=$('choices').children;
+  for(let i=0;i<btns.length;i++){btns[i].disabled=true;
+    if(i===it.ans)btns[i].classList.add('correct'); else if(i===idx)btns[i].classList.add('wrong');}
+  const last=(pos>=mains.length-1);
+  const fb=$('feedback');
+  const ansText='【'+LT[it.ans]+'】 '+esc(it.choices[it.ans]);
+  let html='<div class="fb '+(correct?'ok':'ng')+'">';
+  html+='<div class="head">'+(correct?'✅ 正解！':'❌ 不正解')+'</div>';
+  if(!correct) html+='<div class="ansline">あなたの解答： <b style="color:var(--ng)">'+LT[idx]+'</b>　／　正解： <b>'+fmt(ansText)+'</b></div>';
+  else html+='<div class="ansline">正解： <b>'+fmt(ansText)+'</b></div>';
+  html+='<div class="expl">'+(correct?'':'<span class="tag">💡 解説</span>')+fmt(q.explanation)+'</div>';
+  html+='</div>';
+  html+='<button class="nextbtn" id="nextBtn">'+(last?'結果を見る 🎯':'次の問題へ ▶')+'</button>';
+  fb.innerHTML=html;
+  $('nextBtn').addEventListener('click',()=>{ if(last)showResult(); else {pos++;showCurrent();} });
+  $('nextBtn').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ---------- result ---------- */
+function showResult(){
+  $('quizScreen').classList.add('hidden'); $('quitBtn').classList.add('hidden');
+  $('resultScreen').classList.remove('hidden');
+  const pc=score.t?Math.round(score.c/score.t*100):0;
+  $('resScore').textContent=pc+'%';
+  $('resScore').style.color=pc>=80?'var(--ok)':pc>=PASS_PCT?'var(--warn)':'var(--ng)';
+  $('resSub').textContent=score.c+' / '+score.t+' 問 正解';
+  if(settings.mode==='mock'){
+    const ok=pc>=PASS_PCT;
+    $('passBox').innerHTML='<div class="passbox '+(ok?'pass':'fail')+'">'
+      +(ok?'🎉 合格ライン（'+PASS_PCT+'%）クリア！':'あと一歩 — 合格ラインは'+PASS_PCT+'%')+'</div>';
+  }else $('passBox').innerHTML='';
+  // 分野（field）別 集計
+  const byF={};
+  log.forEach(l=>{const f=fieldOf(l.item.q);const o=byF[f]=byF[f]||{c:0,t:0};o.t++;if(l.correct)o.c++;});
+  const rows=Object.keys(byF).map(k=>{const o=byF[k];return{name:k,c:o.c,t:o.t,pct:Math.round(o.c/o.t*100)};})
+    .sort((a,b)=>a.pct-b.pct||b.t-a.t);
+  // レーダー（FIELDS順・解いた分野のみ）
+  const radarData=FIELDS.filter(F=>byF[F.key]).map(F=>{const o=byF[F.key];return{name:F.key,short:F.short,c:o.c,t:o.t,pct:Math.round(o.c/o.t*100)};});
+  window._radarData=radarData; window._statRows=rows;
+  $('radarWrap').innerHTML = radarData.length>=3
+    ? renderRadar(radarData)
+    : '<div class="radarmin">レーダーチャートは3分野以上を解くと表示されます（今回 '+radarData.length+' 分野）。下の一覧でご確認ください。</div>';
+  // 得意・苦手サマリ
+  if(rows.length){
+    const worst=rows[0], best=rows[rows.length-1];
+    let sum='<span class="good">💪 得意：'+esc(best.name)+'（'+best.pct+'%）</span>';
+    if(rows.length>1) sum+='<span class="bad">📌 苦手：'+esc(worst.name)+'（'+worst.pct+'%）</span>';
+    $('radarSum').innerHTML=sum;
+  }else $('radarSum').innerHTML='';
+  // 分野別バー（苦手→得意の順）
+  let h='';
+  rows.forEach(r=>{const col=r.pct>=80?'var(--ok)':r.pct>=PASS_PCT?'var(--warn)':'var(--ng)';
+    h+='<div class="trow"><span class="tn">'+esc(r.name)+'</span><span class="bar"><i style="width:'+r.pct+'%;background:'+col+'"></i></span><span class="pc" style="color:'+col+'">'+r.c+'/'+r.t+'</span></div>';});
+  $('topicResult').innerHTML=h||'<div style="color:var(--sub);font-size:13px">データなし</div>';
+  // 間違えた問題
+  const wrongs=log.filter(l=>!l.correct);
+  let ws='';
+  if(wrongs.length){
+    ws='<div class="secttl">📝 間違えた問題（'+wrongs.length+'）</div>';
+    wrongs.forEach(l=>{const q=l.item.q;const it=l.item;
+      ws+='<div class="wrongq"><div class="wq">'+fmt(q.question.slice(0,90))+(q.question.length>90?'…':'')+'</div>'
+        +'<div class="wa">正解：【'+LT[it.ans]+'】'+fmt(it.choices[it.ans])+'</div>'
+        +'<div style="color:var(--sub);margin-top:4px">'+fmt(q.explanation)+'</div></div>';});
+  }else ws='<div class="secttl">🎉 全問正解！</div>';
+  $('wrongSect').innerHTML=ws;
+  window._wrongIds=new Set(wrongs.map(w=>w.item.q.id));
+  $('retryWrong').disabled=wrongs.length===0; $('retryWrong').style.opacity=wrongs.length===0?.4:1;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+$('againBtn').addEventListener('click',goStart);
+$('retryWrong').addEventListener('click',()=>{if(!window._wrongIds||!window._wrongIds.size)return;
+  settings.mode='cat';settings.cat='all';settings.len='all';buildSession(window._wrongIds);});
+
+/* ---------- 結果の共有 ---------- */
+function buildShareText(){
+  const pc=score.t?Math.round(score.c/score.t*100):0;
+  const modeLabel=settings.mode==='mock'?('模擬試験('+score.t+'問)'):'カテゴリ別練習';
+  let t='【科目A免除試験 対策】\n'+modeLabel+' '+pc+'%（'+score.c+'/'+score.t+'）';
+  if(settings.mode==='mock') t+=(pc>=PASS_PCT?' ✅合格ライン':' あと一歩');
+  const rows=window._statRows||[];
+  if(rows.length){
+    const best=rows[rows.length-1], worst=rows[0];
+    t+='\n💪得意：'+best.name+' '+best.pct+'%';
+    if(rows.length>1) t+='\n📌苦手：'+worst.name+' '+worst.pct+'%';
+  }
+  t+='\n#科目A免除試験 #基本情報技術者';
+  return t;
+}
+async function shareResult(){
+  const text=buildShareText();
+  try{ if(navigator.share){ await navigator.share({title:'科目A免除試験 対策', text:text}); return; } }
+  catch(e){ if(e && e.name==='AbortError') return; }
+  try{ await navigator.clipboard.writeText(text);
+    alert('結果をクリップボードにコピーしました 📋\n貼り付けて共有できます。\n\n'+text); }
+  catch(e){ window.prompt('以下をコピーして共有してください：', text); }
+}
+$('shareBtn').addEventListener('click',shareResult);
+$('quitBtn').addEventListener('click',()=>{if(confirm('終了して結果を見ますか？'))showResult();});
+function goStart(){$('resultScreen').classList.add('hidden');$('quizScreen').classList.add('hidden');$('quitBtn').classList.add('hidden');$('startScreen').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'});}
+
+if(!Q.length){document.querySelector('.wrap').innerHTML='<div class="hero"><h2>データが読み込めません</h2><p>data.js が同じフォルダにあるか確認してください。</p></div>';}
+else initStart();
+</script>
+</body>
+</html>
