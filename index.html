@@ -59,6 +59,12 @@ button{font-family:inherit;cursor:pointer}
 .qbar .sc{font-weight:800;color:var(--ink)}
 .simbar{background:linear-gradient(135deg,#fff6e6,#fff0d6);border:1px solid #ffe1ad;color:var(--warn);
   border-radius:12px;padding:8px 14px;font-weight:800;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.drillbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;color:var(--sub);flex-wrap:wrap}
+.drillbar .dt{font-weight:800;color:var(--ink)}
+.drillbar .dstreak{margin-left:auto;font-weight:800;color:var(--warn)}
+.drillbar .dscore{font-weight:800;color:var(--ink)}
+.drillsum{text-align:center;padding:6px 0}
+.drillsum .big{font-size:40px;font-weight:800;margin:8px 0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 20px;box-shadow:var(--shadow)}
 .meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .meta .src{margin-left:auto;font-size:12px;color:var(--sub)}
@@ -141,6 +147,7 @@ button{font-family:inherit;cursor:pointer}
         <div class="pill"><b id="stPast">–</b><span>過去問</span></div>
         <div class="pill"><b id="stOrig">–</b><span>カテゴリ別</span></div>
         <div class="pill"><b id="stMock">–</b><span>予想模試</span></div>
+        <div class="pill"><b id="stTerms">–</b><span>用語ドリル</span></div>
       </div>
       <div class="fld">
         <label>モード</label>
@@ -148,6 +155,7 @@ button{font-family:inherit;cursor:pointer}
           <button class="opt sel" data-mode="past">📚 過去問</button>
           <button class="opt" data-mode="cat">✏️ カテゴリー別問題</button>
           <button class="opt" data-mode="mock">🎯 模擬試験</button>
+          <button class="opt" data-mode="drill">🔤 用語ドリル</button>
         </div>
       </div>
       <div id="filterWrap">
@@ -178,6 +186,17 @@ button{font-family:inherit;cursor:pointer}
           <button class="opt sel" data-mlen="60">60問<small>本番形式</small></button>
           <button class="opt" data-mlen="all">全問<small id="mockAllCnt"></small></button>
         </div>
+      </div>
+      <div id="drillCatWrap" class="fld hidden">
+        <label>出題範囲</label>
+        <div class="opts" id="drillCatOpts">
+          <button class="opt sel" data-dcat="all">🔤 すべて<small id="dcAll"></small></button>
+          <button class="opt" data-dcat="biz">💼 ビジネス系<small id="dcBiz"></small></button>
+          <button class="opt" data-dcat="tech">🖥 技術系<small id="dcTech"></small></button>
+        </div>
+      </div>
+      <div id="drillNote" class="note hidden" style="background:#eef9f0;border:1px solid #bce8d5;border-radius:12px;padding:12px 14px;color:var(--ok);font-weight:600;margin-bottom:18px">
+        🔤 略語・用語の意味を「用語→意味」「意味→用語」の両方向でテンポよく出題します。<b>正解すると自動で次へ</b>進み、連続正解数を記録。スキマ時間に黙々と暗記できます（PCはキー1〜4で解答・Enterで次へ）。
       </div>
       <button class="startbtn" id="goBtn">練習をはじめる ▶</button>
       <p class="note">
@@ -230,6 +249,23 @@ button{font-family:inherit;cursor:pointer}
     </div>
     <p class="foot">学習用に作成したオリジナル問題です。本番の出題範囲は基本情報技術者試験 科目A に準拠。</p>
   </section>
+
+  <!-- ========== DRILL（用語暗記） ========== -->
+  <section id="drillScreen" class="hidden">
+    <div class="drillbar">
+      <span class="dt">🔤 用語ドリル</span>
+      <span class="badge b-str" id="dDir">用語→意味</span>
+      <span class="badge b-topic" id="dGroup"></span>
+      <span class="dstreak">🔥連続 <b id="dStreak">0</b></span>
+      <span class="dscore" id="dScore">0 / 0</span>
+      <button class="linkbtn" id="drillQuit">終了</button>
+    </div>
+    <div class="card">
+      <div class="qtext" id="dQ"></div>
+      <div class="choices" id="dChoices"></div>
+      <div id="dFeedback"></div>
+    </div>
+  </section>
 </div>
 
 <script src="data.js"></script>
@@ -237,6 +273,7 @@ button{font-family:inherit;cursor:pointer}
 <script src="past.js"></script>
 <script src="predicted_know.js"></script>
 <script src="predicted.js"></script>
+<script src="terms.js"></script>
 <script>
 "use strict";
 const Q = (window.QUESTIONS||[]);
@@ -312,7 +349,7 @@ function renderRadar(fields){
   return '<div class="radarbox"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'+g+'</svg></div>';
 }
 
-let settings={mode:'past',cat:'all',len:'10',mockLen:'60'};
+let settings={mode:'past',cat:'all',len:'10',mockLen:'60',drillCat:'all'};
 let mains=[];          // [{q, choices(shuffled), ans(new idx)}]
 let pos=0;
 let curItem=null;
@@ -335,6 +372,10 @@ function initStart(){
   $('stOrig').textContent=ORIG.length;
   $('stMock').textContent=PRED_SLOTS+'問';
   if($('mockAllCnt')) $('mockAllCnt').textContent='（'+PRED_SLOTS+'問）';
+  $('stTerms').textContent=TERMS.length+'語';
+  if($('dcAll')) $('dcAll').textContent='（'+TERMS.length+'）';
+  if($('dcBiz')) $('dcBiz').textContent='（'+termsBiz().length+'）';
+  if($('dcTech')) $('dcTech').textContent='（'+termsTech().length+'）';
   refreshFilter(); updateGoBtn();
 }
 function refreshFilter(){
@@ -350,6 +391,8 @@ function updateGoBtn(){
   if(settings.mode==='mock'){
     var n = settings.mockLen==='all' ? PRED_SLOTS : Math.min(60,PRED_SLOTS);
     $('goBtn').textContent='🎯 模擬試験をはじめる（'+n+'問）▶';
+  } else if(settings.mode==='drill'){
+    $('goBtn').textContent='🔤 ドリルをはじめる ▶';
   } else $('goBtn').textContent='練習をはじめる ▶';
 }
 $('catOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b)return;
@@ -360,11 +403,16 @@ $('mockLenOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');i
   [...$('mockLenOpts').children].forEach(o=>o.classList.remove('sel'));b.classList.add('sel');settings.mockLen=b.dataset.mlen;updateGoBtn();});
 $('modeOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b)return;
   [...$('modeOpts').children].forEach(o=>o.classList.remove('sel'));b.classList.add('sel');settings.mode=b.dataset.mode;
-  $('filterWrap').classList.toggle('hidden',settings.mode==='mock');
-  $('mockNote').classList.toggle('hidden',settings.mode!=='mock');
-  $('mockLenWrap').classList.toggle('hidden',settings.mode!=='mock');
-  if(settings.mode!=='mock') refreshFilter();
+  const m=settings.mode;
+  $('filterWrap').classList.toggle('hidden',!(m==='past'||m==='cat'));
+  $('mockNote').classList.toggle('hidden',m!=='mock');
+  $('mockLenWrap').classList.toggle('hidden',m!=='mock');
+  $('drillCatWrap').classList.toggle('hidden',m!=='drill');
+  $('drillNote').classList.toggle('hidden',m!=='drill');
+  if(m==='past'||m==='cat') refreshFilter();
   updateGoBtn();});
+$('drillCatOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b)return;
+  [...$('drillCatOpts').children].forEach(o=>o.classList.remove('sel'));b.classList.add('sel');settings.drillCat=b.dataset.dcat;});
 $('goBtn').addEventListener('click',()=>buildSession());
 
 /* ---------- build a session ---------- */
@@ -388,6 +436,7 @@ function startQuiz(){
 }
 function buildSession(restrict){
   if(settings.mode==='mock'){ buildPredicted(); return; }
+  if(settings.mode==='drill'){ startDrill(); return; }
   let pool=poolFor(settings.cat);
   if(restrict) pool=pool.filter(q=>restrict.has(q.id));
   pool=shuffle(pool);
@@ -538,7 +587,81 @@ async function shareResult(){
 }
 $('shareBtn').addEventListener('click',shareResult);
 $('quitBtn').addEventListener('click',()=>{if(confirm('終了して結果を見ますか？'))showResult();});
-function goStart(){$('resultScreen').classList.add('hidden');$('quizScreen').classList.add('hidden');$('quitBtn').classList.add('hidden');$('startScreen').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'});}
+function goStart(){clearDrillTimer();$('resultScreen').classList.add('hidden');$('quizScreen').classList.add('hidden');$('drillScreen').classList.add('hidden');$('quitBtn').classList.add('hidden');$('startScreen').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'});}
+
+/* ================= 用語暗記ドリル ================= */
+const TERMS = (window.TERMS||[]);
+const DRILL_BIZ = new Set(['経営戦略','経営管理','e-ビジネス','エンジニアリング','マネジメント']);
+function termsBiz(){ return TERMS.filter(t=>DRILL_BIZ.has(t.a)); }
+function termsTech(){ return TERMS.filter(t=>!DRILL_BIZ.has(t.a)); }
+function drillPoolFor(dc){ return dc==='biz'?termsBiz():dc==='tech'?termsTech():TERMS.slice(); }
+let drillPool=[],drillPos=0,drillCur=null,drillOpts=[],drillAns=0,drillAnswered=false,drillTimer=null;
+let drillStat={c:0,t:0,streak:0,best:0};
+function clearDrillTimer(){ if(drillTimer){clearTimeout(drillTimer);drillTimer=null;} }
+function pickTermDistractors(target,key){
+  let same=shuffle(TERMS.filter(x=>x!==target && x.a===target.a)).slice(0,3);
+  if(same.length<3){ const more=shuffle(TERMS.filter(x=>x!==target && same.indexOf(x)<0)); same=same.concat(more).slice(0,3); }
+  return same.map(x=>x[key]);
+}
+function startDrill(){
+  drillPool=shuffle(drillPoolFor(settings.drillCat));
+  if(!drillPool.length){ alert('用語データが読み込めません'); return; }
+  drillPos=0; drillStat={c:0,t:0,streak:0,best:0};
+  $('startScreen').classList.add('hidden'); $('resultScreen').classList.add('hidden'); $('quizScreen').classList.add('hidden');
+  $('quitBtn').classList.add('hidden');
+  $('drillScreen').classList.remove('hidden');
+  drillRender();
+}
+function drillRender(){
+  drillAnswered=false; clearDrillTimer();
+  const t=drillPool[drillPos % drillPool.length]; drillCur=t;
+  const dir = Math.random()<0.5?'mean':'term';
+  let opts, correctVal, q, dirLabel;
+  if(dir==='mean'){ dirLabel='用語 → 意味'; q='「'+t.t+'」の意味として適切なものはどれか。'; correctVal=t.m; opts=shuffle([t.m].concat(pickTermDistractors(t,'m'))); }
+  else { dirLabel='意味 → 用語'; q='次の説明に当てはまる用語はどれか。\n「'+t.m+'」'; correctVal=t.t; opts=shuffle([t.t].concat(pickTermDistractors(t,'t'))); }
+  drillOpts=opts; drillAns=opts.indexOf(correctVal);
+  $('dDir').textContent=dirLabel; $('dGroup').textContent=t.a;
+  $('dQ').innerHTML=fmt(q);
+  const cc=$('dChoices'); cc.innerHTML='';
+  opts.forEach((c,i)=>{ const b=document.createElement('button'); b.className='choice';
+    b.innerHTML='<span class="lt">'+LT[i]+'</span><span class="ct">'+fmt(c)+'</span>';
+    b.addEventListener('click',()=>drillPick(i)); cc.appendChild(b); });
+  $('dFeedback').innerHTML='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function drillPick(idx){
+  if(drillAnswered)return; drillAnswered=true;
+  const correct=(idx===drillAns);
+  drillStat.t++;
+  if(correct){ drillStat.c++; drillStat.streak++; if(drillStat.streak>drillStat.best)drillStat.best=drillStat.streak; } else drillStat.streak=0;
+  $('dScore').textContent=drillStat.c+' / '+drillStat.t;
+  $('dStreak').textContent=drillStat.streak;
+  const btns=$('dChoices').children;
+  for(let i=0;i<btns.length;i++){ btns[i].disabled=true; if(i===drillAns)btns[i].classList.add('correct'); else if(i===idx)btns[i].classList.add('wrong'); }
+  let html='<div class="fb '+(correct?'ok':'ng')+'"><div class="head">'+(correct?'✅ 正解！':'❌ 不正解')+'</div>';
+  html+='<div class="ansline"><b>'+esc(drillCur.t)+'</b>　＝　'+fmt(drillCur.m)+'</div></div>';
+  html+='<button class="nextbtn'+(correct?'':' sim')+'" id="dNext">次へ ▶</button>';
+  $('dFeedback').innerHTML=html;
+  $('dNext').addEventListener('click',drillNext);
+  if(correct){ drillTimer=setTimeout(drillNext,750); } else { try{$('dNext').focus();}catch(e){} }
+}
+function drillNext(){ clearDrillTimer(); drillPos++; if(drillPos>=drillPool.length){ drillPool=shuffle(drillPool); drillPos=0; } drillRender(); }
+function drillEnd(){
+  clearDrillTimer();
+  const pc=drillStat.t?Math.round(drillStat.c/drillStat.t*100):0;
+  const col=pc>=80?'var(--ok)':pc>=60?'var(--warn)':'var(--ng)';
+  $('dChoices').innerHTML=''; $('dDir').textContent='結果'; $('dGroup').textContent='';
+  $('dQ').innerHTML='<div class="drillsum">🔤 用語ドリル おつかれさま！<div class="big" style="color:'+col+'">'+pc+'%</div>'
+    +'<div style="color:var(--sub);font-size:14px">'+drillStat.c+' / '+drillStat.t+' 問正解　最高連続 '+drillStat.best+'</div></div>';
+  $('dFeedback').innerHTML='<button class="nextbtn" id="dHome">🏠 ホームへ</button>';
+  $('dHome').addEventListener('click',goStart);
+}
+$('drillQuit').addEventListener('click',drillEnd);
+document.addEventListener('keydown',e=>{
+  if($('drillScreen').classList.contains('hidden'))return;
+  if(!drillAnswered){ const n={'1':0,'2':1,'3':2,'4':3}[e.key]; if(n!=null && drillOpts[n]!=null){ drillPick(n); e.preventDefault(); } }
+  else if(e.key==='Enter'||e.key===' '||e.key==='ArrowRight'){ drillNext(); e.preventDefault(); }
+});
 
 if(!Q.length){document.querySelector('.wrap').innerHTML='<div class="hero"><h2>データが読み込めません</h2><p>data.js が同じフォルダにあるか確認してください。</p></div>';}
 else initStart();
