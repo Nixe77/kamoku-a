@@ -170,7 +170,14 @@ button{font-family:inherit;cursor:pointer}
       </div>
       </div>
       <div id="mockNote" class="note hidden" style="background:#fff6e6;border:1px solid #ffe1ad;border-radius:12px;padding:12px 14px;color:var(--warn);font-weight:600;margin-bottom:18px">
-        🎯 次回試験を想定した<b>予想問題</b>を、全分野からスロットごとに1問ずつ出題します。各スロットには似た問題がプールされ、<b>毎回ランダムに選ばれる</b>ので受けるたびに違うテストになります。<br>本番は60問90分・60%で合格。
+        🎯 次回試験を想定した<b>予想問題</b>を出題します。各分野のスロットには似た問題がプールされ、<b>毎回ランダムに選ばれる</b>ので受けるたびに違うテストになります。<br>本番は60問90分・60%で合格。
+      </div>
+      <div id="mockLenWrap" class="fld hidden">
+        <label>出題数</label>
+        <div class="opts" id="mockLenOpts">
+          <button class="opt sel" data-mlen="60">60問<small>本番形式</small></button>
+          <button class="opt" data-mlen="all">全問<small id="mockAllCnt"></small></button>
+        </div>
       </div>
       <button class="startbtn" id="goBtn">練習をはじめる ▶</button>
       <p class="note">
@@ -304,7 +311,7 @@ function renderRadar(fields){
   return '<div class="radarbox"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'+g+'</svg></div>';
 }
 
-let settings={mode:'past',cat:'all',len:'10'};
+let settings={mode:'past',cat:'all',len:'10',mockLen:'60'};
 let mains=[];          // [{q, choices(shuffled), ans(new idx)}]
 let pos=0;
 let curItem=null;
@@ -326,6 +333,7 @@ function initStart(){
   $('stPast').textContent=PAST.length;
   $('stOrig').textContent=ORIG.length;
   $('stMock').textContent=PRED_SLOTS+'問';
+  if($('mockAllCnt')) $('mockAllCnt').textContent='（'+PRED_SLOTS+'問）';
   refreshFilter(); updateGoBtn();
 }
 function refreshFilter(){
@@ -338,18 +346,22 @@ function refreshFilter(){
 }
 function updateAllCnt(){$('allCnt').textContent='（'+poolFor(settings.cat).length+'問）';}
 function updateGoBtn(){
-  $('goBtn').textContent = settings.mode==='mock'
-    ? '🎯 模擬試験をはじめる（'+PRED_SLOTS+'問）▶'
-    : '練習をはじめる ▶';
+  if(settings.mode==='mock'){
+    var n = settings.mockLen==='all' ? PRED_SLOTS : Math.min(60,PRED_SLOTS);
+    $('goBtn').textContent='🎯 模擬試験をはじめる（'+n+'問）▶';
+  } else $('goBtn').textContent='練習をはじめる ▶';
 }
 $('catOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b)return;
   [...$('catOpts').children].forEach(o=>o.classList.remove('sel'));b.classList.add('sel');settings.cat=b.dataset.cat;updateAllCnt();});
 $('lenOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b)return;
   [...$('lenOpts').children].forEach(o=>o.classList.remove('sel'));b.classList.add('sel');settings.len=b.dataset.len;});
+$('mockLenOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b)return;
+  [...$('mockLenOpts').children].forEach(o=>o.classList.remove('sel'));b.classList.add('sel');settings.mockLen=b.dataset.mlen;updateGoBtn();});
 $('modeOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b)return;
   [...$('modeOpts').children].forEach(o=>o.classList.remove('sel'));b.classList.add('sel');settings.mode=b.dataset.mode;
   $('filterWrap').classList.toggle('hidden',settings.mode==='mock');
   $('mockNote').classList.toggle('hidden',settings.mode!=='mock');
+  $('mockLenWrap').classList.toggle('hidden',settings.mode!=='mock');
   if(settings.mode!=='mock') refreshFilter();
   updateGoBtn();});
 $('goBtn').addEventListener('click',()=>buildSession());
@@ -384,12 +396,12 @@ function buildSession(restrict){
   startQuiz();
 }
 function buildPredicted(){
-  // 各スロットから変種を1問ずつランダムに選ぶ（毎回違うテストになる）
-  const picked=[];
-  for(let s=1;s<PRED.length;s++){
-    const variants=PRED[s]; if(!variants||!variants.length) continue;
-    picked.push(variants[Math.floor(Math.random()*variants.length)]);
-  }
+  // スロットをシャッフルし、出題数ぶんのスロットを選び、各スロットから変種を1問ずつランダムに選ぶ（毎回違うテスト）
+  let idxs=[];
+  for(let s=1;s<PRED.length;s++){ if(PRED[s]&&PRED[s].length) idxs.push(s); }
+  idxs=shuffle(idxs);
+  if(settings.mockLen!=='all'){ idxs=idxs.slice(0,Math.min(60,idxs.length)); }
+  const picked=idxs.map(s=>{const v=PRED[s];return v[Math.floor(Math.random()*v.length)];});
   mains=shuffle(picked).map(prep);
   startQuiz();
 }
