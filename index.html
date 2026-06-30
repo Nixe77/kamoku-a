@@ -65,6 +65,17 @@ button{font-family:inherit;cursor:pointer}
 .drillbar .dscore{font-weight:800;color:var(--ink)}
 .drillsum{text-align:center;padding:6px 0}
 .drillsum .big{font-size:40px;font-weight:800;margin:8px 0}
+.dexpl{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.dexpl-h{font-size:12px;font-weight:800;color:var(--sub);margin-bottom:8px}
+.de-row{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 11px;margin-bottom:7px;font-size:13.5px}
+.de-row.de-ok{border-color:#bce8d5;background:var(--okbg)}
+.de-row.de-ng{border-color:#f6c9c9;background:var(--ngbg)}
+.de-t{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14.5px}
+.de-area{font-size:11px;font-weight:600;color:var(--sub);margin-left:auto}
+.de-mark{font-size:11px;font-weight:800;padding:1px 8px;border-radius:999px;background:#eef0f7;color:var(--sub)}
+.de-row.de-ok .de-mark{background:var(--ok);color:#fff}
+.de-row.de-ng .de-mark{background:var(--ng);color:#fff}
+.de-m{color:var(--ink);margin-top:3px;line-height:1.65}
 .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 20px;box-shadow:var(--shadow)}
 .meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .meta .src{margin-left:auto;font-size:12px;color:var(--sub)}
@@ -595,13 +606,13 @@ const DRILL_BIZ = new Set(['経営戦略','経営管理','e-ビジネス','エ�
 function termsBiz(){ return TERMS.filter(t=>DRILL_BIZ.has(t.a)); }
 function termsTech(){ return TERMS.filter(t=>!DRILL_BIZ.has(t.a)); }
 function drillPoolFor(dc){ return dc==='biz'?termsBiz():dc==='tech'?termsTech():TERMS.slice(); }
-let drillPool=[],drillPos=0,drillCur=null,drillOpts=[],drillAns=0,drillAnswered=false,drillTimer=null,drillLog=[];
+let drillPool=[],drillPos=0,drillCur=null,drillOpts=[],drillOptTerms=[],drillAns=0,drillAnswered=false,drillTimer=null,drillLog=[];
 let drillStat={c:0,t:0,streak:0,best:0};
 function clearDrillTimer(){ if(drillTimer){clearTimeout(drillTimer);drillTimer=null;} }
-function pickTermDistractors(target,key){
+function pickTermDistractors(target){
   let same=shuffle(TERMS.filter(x=>x!==target && x.a===target.a)).slice(0,3);
   if(same.length<3){ const more=shuffle(TERMS.filter(x=>x!==target && same.indexOf(x)<0)); same=same.concat(more).slice(0,3); }
-  return same.map(x=>x[key]);
+  return same;
 }
 function startDrill(){
   drillPool=shuffle(drillPoolFor(settings.drillCat));
@@ -616,10 +627,12 @@ function drillRender(){
   drillAnswered=false; clearDrillTimer();
   const t=drillPool[drillPos % drillPool.length]; drillCur=t;
   const dir = Math.random()<0.5?'mean':'term';
-  let opts, correctVal, q, dirLabel;
-  if(dir==='mean'){ dirLabel='用語 → 意味'; q='「'+t.t+'」の意味として適切なものはどれか。'; correctVal=t.m; opts=shuffle([t.m].concat(pickTermDistractors(t,'m'))); }
-  else { dirLabel='意味 → 用語'; q='次の説明に当てはまる用語はどれか。\n「'+t.m+'」'; correctVal=t.t; opts=shuffle([t.t].concat(pickTermDistractors(t,'t'))); }
-  drillOpts=opts; drillAns=opts.indexOf(correctVal);
+  const allTerms=shuffle([t].concat(pickTermDistractors(t)));
+  drillOptTerms=allTerms; drillAns=allTerms.indexOf(t);
+  let opts, q, dirLabel;
+  if(dir==='mean'){ dirLabel='用語 → 意味'; q='「'+t.t+'」の意味として適切なものはどれか。'; opts=allTerms.map(x=>x.m); }
+  else { dirLabel='意味 → 用語'; q='次の説明に当てはまる用語はどれか。\n「'+t.m+'」'; opts=allTerms.map(x=>x.t); }
+  drillOpts=opts;
   $('dDir').textContent=dirLabel; $('dGroup').textContent=t.a;
   $('dQ').innerHTML=fmt(q);
   const cc=$('dChoices'); cc.innerHTML='';
@@ -644,9 +657,19 @@ function drillPick(idx){
     $('dFeedback').innerHTML='';
     drillTimer=setTimeout(drillNext,500);
   } else {
-    // 不正解のときだけ解説（用語＝意味）を表示し、手動で次へ
+    // 不正解のときだけ解説を表示（正解＋4択すべての用語の意味）。手動で次へ。
     let html='<div class="fb ng"><div class="head">❌ 不正解</div>';
-    html+='<div class="ansline"><b>'+esc(drillCur.t)+'</b>　＝　'+fmt(drillCur.m)+'</div></div>';
+    html+='<div class="ansline">正解は <b>'+esc(drillCur.t)+'</b>　＝　'+fmt(drillCur.m)+'</div>';
+    html+='<div class="dexpl"><div class="dexpl-h">📖 各選択肢の用語の意味</div>';
+    drillOptTerms.forEach((tm,i)=>{
+      const role = (i===drillAns) ? 'ok' : (i===idx ? 'ng' : '');
+      const mark = (i===drillAns) ? '◯ 正解' : (i===idx ? '× あなたの解答' : '');
+      html+='<div class="de-row'+(role?' de-'+role:'')+'">'
+        +'<div class="de-t"><b>'+esc(tm.t)+'</b>'+(mark?'<span class="de-mark">'+mark+'</span>':'')
+        +'<span class="de-area">'+esc(tm.a)+'</span></div>'
+        +'<div class="de-m">'+fmt(tm.m)+'</div></div>';
+    });
+    html+='</div>';
     html+='<button class="nextbtn sim" id="dNext">次へ ▶</button>';
     $('dFeedback').innerHTML=html;
     $('dNext').addEventListener('click',drillNext);
