@@ -138,19 +138,19 @@ button{font-family:inherit;cursor:pointer}
       <h2>科目A 対策トレーニング</h2>
       <p class="lead">サーティファイ 科目A免除修了試験（基本情報技術者試験 科目A 相当）／四肢択一</p>
       <div class="stat">
-        <div class="pill"><b id="stTotal">–</b><span>収録問題</span></div>
-        <div class="pill"><b id="stTech">–</b><span>テクノロジ</span></div>
-        <div class="pill"><b id="stMng">–</b><span>マネジメント</span></div>
-        <div class="pill"><b id="stStr">–</b><span>ストラテジ</span></div>
+        <div class="pill"><b id="stPast">–</b><span>過去問</span></div>
+        <div class="pill"><b id="stOrig">–</b><span>カテゴリ別</span></div>
+        <div class="pill"><b id="stMock">–</b><span>予想模試</span></div>
       </div>
       <div class="fld">
         <label>モード</label>
         <div class="opts" id="modeOpts">
-          <button class="opt sel" data-mode="cat">📚 カテゴリ別練習</button>
-          <button class="opt" data-mode="mock">📝 模擬試験（ランダム50問）</button>
+          <button class="opt sel" data-mode="past">📚 過去問</button>
+          <button class="opt" data-mode="cat">✏️ カテゴリー別問題</button>
+          <button class="opt" data-mode="mock">🎯 模擬試験</button>
         </div>
       </div>
-      <div id="catOptsWrap">
+      <div id="filterWrap">
       <div class="fld">
         <label>出題カテゴリ</label>
         <div class="opts" id="catOpts">
@@ -170,7 +170,7 @@ button{font-family:inherit;cursor:pointer}
       </div>
       </div>
       <div id="mockNote" class="note hidden" style="background:#fff6e6;border:1px solid #ffe1ad;border-radius:12px;padding:12px 14px;color:var(--warn);font-weight:600;margin-bottom:18px">
-        🕒 全分野からランダムに50問を出題します（収録数が50未満のときは全問）。本番は60問90分・60%で合格。<br>毎回出題順と選択肢がシャッフルされます。
+        🎯 次回試験を想定した<b>予想問題</b>を、全分野からスロットごとに1問ずつ出題します。各スロットには似た問題がプールされ、<b>毎回ランダムに選ばれる</b>ので受けるたびに違うテストになります。<br>本番は60問90分・60%で合格。
       </div>
       <button class="startbtn" id="goBtn">練習をはじめる ▶</button>
       <p class="note">
@@ -189,7 +189,7 @@ button{font-family:inherit;cursor:pointer}
       <div class="prog"><i id="progBar" style="width:0%"></i></div>
       <span class="sc" id="scoreLbl">0 / 0</span>
     </div>
-    <div id="mockBanner" class="simbar hidden">📝 模擬試験モード — 全分野ランダム50問</div>
+    <div id="mockBanner" class="simbar hidden">🎯 模擬試験（予想問題）— 全分野・毎回シャッフルで違うテスト</div>
     <div class="card">
       <div class="meta">
         <span class="badge" id="catBadge">テクノロジ</span>
@@ -227,6 +227,8 @@ button{font-family:inherit;cursor:pointer}
 
 <script src="data.js"></script>
 <script src="past.js"></script>
+<script src="predicted_know.js"></script>
+<script src="predicted.js"></script>
 <script>
 "use strict";
 const Q = (window.QUESTIONS||[]);
@@ -302,7 +304,7 @@ function renderRadar(fields){
   return '<div class="radarbox"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'+g+'</svg></div>';
 }
 
-let settings={mode:'cat',cat:'all',len:'10'};
+let settings={mode:'past',cat:'all',len:'10'};
 let mains=[];          // [{q, choices(shuffled), ans(new idx)}]
 let pos=0;
 let curItem=null;
@@ -310,24 +312,34 @@ let answered=false;
 let score={c:0,t:0};
 let log=[];
 
+/* ---------- 問題プール ---------- */
+const PAST = Q.filter(q=>q.src);     // 過去問（src付き）
+const ORIG = Q.filter(q=>!q.src);    // カテゴリー別問題（新規オリジナル）
+const PRED = window.PREDICTED_SLOTS || [];
+const PRED_SLOTS = (window.PREDICTED_INFO && window.PREDICTED_INFO.slots) || Math.max(PRED.length-1,0);
+function modePool(){ return settings.mode==='cat' ? ORIG : PAST; }   // past / cat 用プール
+function poolFor(cat){ return modePool().filter(q=>cat==='all'||q.cat===cat); }
+
 /* ---------- start screen ---------- */
-function countCat(c){return Q.filter(q=>q.cat===c).length;}
+function countCat(pool,c){return pool.filter(q=>q.cat===c).length;}
 function initStart(){
-  $('stTotal').textContent=Q.length;
-  $('stTech').textContent=countCat('テクノロジ');
-  $('stMng').textContent=countCat('マネジメント');
-  $('stStr').textContent=countCat('ストラテジ');
-  $('cAll').textContent='（'+Q.length+'問）';
-  $('cTech').textContent='（'+countCat('テクノロジ')+'問）';
-  $('cMng').textContent='（'+countCat('マネジメント')+'問）';
-  $('cStr').textContent='（'+countCat('ストラテジ')+'問）';
-  updateAllCnt(); updateGoBtn();
+  $('stPast').textContent=PAST.length;
+  $('stOrig').textContent=ORIG.length;
+  $('stMock').textContent=PRED_SLOTS+'問';
+  refreshFilter(); updateGoBtn();
 }
-function poolFor(cat){return Q.filter(q=>cat==='all'||q.cat===cat);}
+function refreshFilter(){
+  const pool=modePool();
+  $('cAll').textContent='（'+pool.length+'問）';
+  $('cTech').textContent='（'+countCat(pool,'テクノロジ')+'問）';
+  $('cMng').textContent='（'+countCat(pool,'マネジメント')+'問）';
+  $('cStr').textContent='（'+countCat(pool,'ストラテジ')+'問）';
+  updateAllCnt();
+}
 function updateAllCnt(){$('allCnt').textContent='（'+poolFor(settings.cat).length+'問）';}
 function updateGoBtn(){
   $('goBtn').textContent = settings.mode==='mock'
-    ? '📝 模擬試験をはじめる（'+Math.min(MOCK_N,Q.length)+'問）▶'
+    ? '🎯 模擬試験をはじめる（'+PRED_SLOTS+'問）▶'
     : '練習をはじめる ▶';
 }
 $('catOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b)return;
@@ -336,8 +348,9 @@ $('lenOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b
   [...$('lenOpts').children].forEach(o=>o.classList.remove('sel'));b.classList.add('sel');settings.len=b.dataset.len;});
 $('modeOpts').addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b)return;
   [...$('modeOpts').children].forEach(o=>o.classList.remove('sel'));b.classList.add('sel');settings.mode=b.dataset.mode;
-  $('catOptsWrap').classList.toggle('hidden',settings.mode==='mock');
+  $('filterWrap').classList.toggle('hidden',settings.mode==='mock');
   $('mockNote').classList.toggle('hidden',settings.mode!=='mock');
+  if(settings.mode!=='mock') refreshFilter();
   updateGoBtn();});
 $('goBtn').addEventListener('click',()=>buildSession());
 
@@ -350,19 +363,7 @@ function prep(q){
   const ans=sh.indexOf(q.answer);
   return {q,choices,ans};
 }
-function buildSession(restrict){
-  let pool;
-  if(settings.mode==='mock'){
-    pool=shuffle(Q.slice());
-    pool=pool.slice(0,Math.min(MOCK_N,pool.length));
-  }else{
-    pool=poolFor(settings.cat);
-    if(restrict) pool=pool.filter(q=>restrict.has(q.id));
-    pool=shuffle(pool);
-    let lim=settings.len;
-    if(lim!=='all'){lim=parseInt(lim,10); if(pool.length>lim) pool=pool.slice(0,lim);}
-  }
-  mains=pool.map(prep);
+function startQuiz(){
   pos=0;answered=false;score={c:0,t:0};log=[];
   $('startScreen').classList.add('hidden');
   $('resultScreen').classList.add('hidden');
@@ -371,6 +372,30 @@ function buildSession(restrict){
   $('mockBanner').classList.toggle('hidden',settings.mode!=='mock');
   $('qTot').textContent=mains.length;
   showCurrent();
+}
+function buildSession(restrict){
+  if(settings.mode==='mock'){ buildPredicted(); return; }
+  let pool=poolFor(settings.cat);
+  if(restrict) pool=pool.filter(q=>restrict.has(q.id));
+  pool=shuffle(pool);
+  let lim=settings.len;
+  if(lim!=='all'){lim=parseInt(lim,10); if(pool.length>lim) pool=pool.slice(0,lim);}
+  mains=pool.map(prep);
+  startQuiz();
+}
+function buildPredicted(){
+  // 各スロットから変種を1問ずつランダムに選ぶ（毎回違うテストになる）
+  const picked=[];
+  for(let s=1;s<PRED.length;s++){
+    const variants=PRED[s]; if(!variants||!variants.length) continue;
+    picked.push(variants[Math.floor(Math.random()*variants.length)]);
+  }
+  mains=shuffle(picked).map(prep);
+  startQuiz();
+}
+function buildFromList(qList){   // 間違えた問題だけの復習（モード共通）
+  mains=shuffle(qList).map(prep);
+  startQuiz();
 }
 
 /* ---------- render ---------- */
@@ -383,7 +408,7 @@ function showCurrent(){
   $('scoreLbl').textContent=score.c+' / '+score.t;
   const cb=$('catBadge'); cb.textContent=catLabel(q.cat); cb.className='badge '+catClass(q.cat);
   $('topicBadge').textContent=q.topic;
-  $('srcLbl').textContent = q.src ? q.src : ('問'+(pos+1));
+  $('srcLbl').textContent = q.src ? q.src : (q.predicted ? '予想問題' : ('問'+(pos+1)));
   $('qText').innerHTML=fmt(q.question);
   const cc=$('choices'); cc.innerHTML='';
   curItem.choices.forEach((c,i)=>{
@@ -468,13 +493,12 @@ function showResult(){
         +'<div style="color:var(--sub);margin-top:4px">'+fmt(q.explanation)+'</div></div>';});
   }else ws='<div class="secttl">🎉 全問正解！</div>';
   $('wrongSect').innerHTML=ws;
-  window._wrongIds=new Set(wrongs.map(w=>w.item.q.id));
+  window._wrongQ=wrongs.map(w=>w.item.q);
   $('retryWrong').disabled=wrongs.length===0; $('retryWrong').style.opacity=wrongs.length===0?.4:1;
   window.scrollTo({top:0,behavior:'smooth'});
 }
 $('againBtn').addEventListener('click',goStart);
-$('retryWrong').addEventListener('click',()=>{if(!window._wrongIds||!window._wrongIds.size)return;
-  settings.mode='cat';settings.cat='all';settings.len='all';buildSession(window._wrongIds);});
+$('retryWrong').addEventListener('click',()=>{if(!window._wrongQ||!window._wrongQ.length)return; buildFromList(window._wrongQ);});
 
 /* ---------- 結果の共有 ---------- */
 function buildShareText(){
