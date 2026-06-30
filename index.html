@@ -218,7 +218,7 @@ button{font-family:inherit;cursor:pointer}
       <div class="btnrow">
         <button class="btn-sec" id="shareBtn">📤 結果を共有</button>
         <button class="btn-sec" id="retryWrong">間違えた問題だけ復習</button>
-        <button class="btn-pri" id="againBtn">もう一度</button>
+        <button class="btn-pri" id="againBtn">🏠 ホームへ</button>
       </div>
     </div>
     <p class="foot">学習用に作成したオリジナル問題です。本番の出題範囲は基本情報技術者試験 科目A に準拠。</p>
@@ -226,6 +226,7 @@ button{font-family:inherit;cursor:pointer}
 </div>
 
 <script src="data.js"></script>
+<script src="past.js"></script>
 <script>
 "use strict";
 const Q = (window.QUESTIONS||[]);
@@ -271,7 +272,7 @@ const FIELD_MAP={
   'プロジェクトマネジメント':'マネジメント','日程計画':'マネジメント','進捗管理':'マネジメント','サービスマネジメント':'マネジメント','システム監査':'マネジメント',
   '調達':'ストラテジ','経営戦略・分析手法':'ストラテジ','経営戦略':'ストラテジ','マーケティング':'ストラテジ','会計・財務':'ストラテジ','知的財産権':'ストラテジ','労働関連法規':'ストラテジ','標準化':'ストラテジ'
 };
-function fieldOf(q){return FIELD_MAP[q.topic] || catLabel(q.cat);}
+function fieldOf(q){return q.field || FIELD_MAP[q.topic] || catLabel(q.cat);}
 
 /* ---------- レーダーチャート（SVG） ---------- */
 function renderRadar(fields){
@@ -382,7 +383,7 @@ function showCurrent(){
   $('scoreLbl').textContent=score.c+' / '+score.t;
   const cb=$('catBadge'); cb.textContent=catLabel(q.cat); cb.className='badge '+catClass(q.cat);
   $('topicBadge').textContent=q.topic;
-  $('srcLbl').textContent='問'+(pos+1);
+  $('srcLbl').textContent = q.src ? q.src : ('問'+(pos+1));
   $('qText').innerHTML=fmt(q.question);
   const cc=$('choices'); cc.innerHTML='';
   curItem.choices.forEach((c,i)=>{
