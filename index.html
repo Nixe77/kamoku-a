@@ -639,12 +639,19 @@ function drillPick(idx){
   $('dStreak').textContent=drillStat.streak;
   const btns=$('dChoices').children;
   for(let i=0;i<btns.length;i++){ btns[i].disabled=true; if(i===drillAns)btns[i].classList.add('correct'); else if(i===idx)btns[i].classList.add('wrong'); }
-  let html='<div class="fb '+(correct?'ok':'ng')+'"><div class="head">'+(correct?'✅ 正解！':'❌ 不正解')+'</div>';
-  html+='<div class="ansline"><b>'+esc(drillCur.t)+'</b>　＝　'+fmt(drillCur.m)+'</div></div>';
-  html+='<button class="nextbtn'+(correct?'':' sim')+'" id="dNext">次へ ▶</button>';
-  $('dFeedback').innerHTML=html;
-  $('dNext').addEventListener('click',drillNext);
-  if(correct){ drillTimer=setTimeout(drillNext,1100); } else { try{$('dNext').focus();}catch(e){} }
+  if(correct){
+    // 正解は解説を出さず、テンポよく自動で次へ（解説は終了時にまとめて確認）
+    $('dFeedback').innerHTML='';
+    drillTimer=setTimeout(drillNext,500);
+  } else {
+    // 不正解のときだけ解説（用語＝意味）を表示し、手動で次へ
+    let html='<div class="fb ng"><div class="head">❌ 不正解</div>';
+    html+='<div class="ansline"><b>'+esc(drillCur.t)+'</b>　＝　'+fmt(drillCur.m)+'</div></div>';
+    html+='<button class="nextbtn sim" id="dNext">次へ ▶</button>';
+    $('dFeedback').innerHTML=html;
+    $('dNext').addEventListener('click',drillNext);
+    try{$('dNext').focus();}catch(e){}
+  }
 }
 function drillNext(){ clearDrillTimer(); drillPos++; if(drillPos>=drillPool.length){ drillPool=shuffle(drillPool); drillPos=0; } drillRender(); }
 function drillEnd(){
