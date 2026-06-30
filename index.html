@@ -595,7 +595,7 @@ const DRILL_BIZ = new Set(['経営戦略','経営管理','e-ビジネス','エ�
 function termsBiz(){ return TERMS.filter(t=>DRILL_BIZ.has(t.a)); }
 function termsTech(){ return TERMS.filter(t=>!DRILL_BIZ.has(t.a)); }
 function drillPoolFor(dc){ return dc==='biz'?termsBiz():dc==='tech'?termsTech():TERMS.slice(); }
-let drillPool=[],drillPos=0,drillCur=null,drillOpts=[],drillAns=0,drillAnswered=false,drillTimer=null;
+let drillPool=[],drillPos=0,drillCur=null,drillOpts=[],drillAns=0,drillAnswered=false,drillTimer=null,drillLog=[];
 let drillStat={c:0,t:0,streak:0,best:0};
 function clearDrillTimer(){ if(drillTimer){clearTimeout(drillTimer);drillTimer=null;} }
 function pickTermDistractors(target,key){
@@ -606,7 +606,7 @@ function pickTermDistractors(target,key){
 function startDrill(){
   drillPool=shuffle(drillPoolFor(settings.drillCat));
   if(!drillPool.length){ alert('用語データが読み込めません'); return; }
-  drillPos=0; drillStat={c:0,t:0,streak:0,best:0};
+  drillPos=0; drillStat={c:0,t:0,streak:0,best:0}; drillLog=[];
   $('startScreen').classList.add('hidden'); $('resultScreen').classList.add('hidden'); $('quizScreen').classList.add('hidden');
   $('quitBtn').classList.add('hidden');
   $('drillScreen').classList.remove('hidden');
@@ -632,6 +632,7 @@ function drillRender(){
 function drillPick(idx){
   if(drillAnswered)return; drillAnswered=true;
   const correct=(idx===drillAns);
+  drillLog.push({term:drillCur,correct:correct});
   drillStat.t++;
   if(correct){ drillStat.c++; drillStat.streak++; if(drillStat.streak>drillStat.best)drillStat.best=drillStat.streak; } else drillStat.streak=0;
   $('dScore').textContent=drillStat.c+' / '+drillStat.t;
@@ -643,18 +644,40 @@ function drillPick(idx){
   html+='<button class="nextbtn'+(correct?'':' sim')+'" id="dNext">次へ ▶</button>';
   $('dFeedback').innerHTML=html;
   $('dNext').addEventListener('click',drillNext);
-  if(correct){ drillTimer=setTimeout(drillNext,750); } else { try{$('dNext').focus();}catch(e){} }
+  if(correct){ drillTimer=setTimeout(drillNext,1100); } else { try{$('dNext').focus();}catch(e){} }
 }
 function drillNext(){ clearDrillTimer(); drillPos++; if(drillPos>=drillPool.length){ drillPool=shuffle(drillPool); drillPos=0; } drillRender(); }
 function drillEnd(){
   clearDrillTimer();
   const pc=drillStat.t?Math.round(drillStat.c/drillStat.t*100):0;
   const col=pc>=80?'var(--ok)':pc>=60?'var(--warn)':'var(--ng)';
+  // 解いた用語を集計（重複は1つにまとめ、1回でも間違えたら復習対象）
+  const map={};
+  drillLog.forEach(l=>{const k=l.term.t; const o=map[k]||(map[k]={term:l.term,wrong:0,n:0}); o.n++; if(!l.correct)o.wrong++;});
+  const wrongs=[], rights=[];
+  Object.keys(map).forEach(k=>{(map[k].wrong>0?wrongs:rights).push(map[k]);});
   $('dChoices').innerHTML=''; $('dDir').textContent='結果'; $('dGroup').textContent='';
   $('dQ').innerHTML='<div class="drillsum">🔤 用語ドリル おつかれさま！<div class="big" style="color:'+col+'">'+pc+'%</div>'
     +'<div style="color:var(--sub);font-size:14px">'+drillStat.c+' / '+drillStat.t+' 問正解　最高連続 '+drillStat.best+'</div></div>';
-  $('dFeedback').innerHTML='<button class="nextbtn" id="dHome">🏠 ホームへ</button>';
+  function row(o,bad){
+    return '<div class="wrongq"><div class="wq">'+(bad?'📕 ':'✅ ')+esc(o.term.t)
+      +' <span style="color:var(--sub);font-weight:600;font-size:11px">'+esc(o.term.a)+'</span></div>'
+      +'<div style="margin-top:2px">'+fmt(o.term.m)+'</div></div>';
+  }
+  let html='';
+  if(drillStat.t===0){
+    html='<div style="color:var(--sub);text-align:center;padding:10px">問題を解くと、ここに解説（用語と意味）の一覧が表示されます。</div>';
+  } else {
+    html+='<div class="secttl">📖 解説（解いた用語の意味）</div>';
+    if(wrongs.length){ html+='<div class="secttl" style="color:var(--ng);font-size:14px;margin-top:8px">📕 間違えた用語（'+wrongs.length+'）— 重点復習</div>'; wrongs.forEach(o=>{html+=row(o,true);}); }
+    else { html+='<div style="color:var(--ok);font-weight:800;margin:8px 0">🎉 間違いなし！全問正解です。</div>'; }
+    if(rights.length){ html+='<div class="secttl" style="font-size:14px;margin-top:10px">✅ 正解した用語（'+rights.length+'）</div>'; rights.forEach(o=>{html+=row(o,false);}); }
+  }
+  html+='<div class="btnrow"><button class="btn-sec" id="dAgain">🔁 もう一度</button><button class="btn-pri" id="dHome">🏠 ホームへ</button></div>';
+  $('dFeedback').innerHTML=html;
   $('dHome').addEventListener('click',goStart);
+  $('dAgain').addEventListener('click',startDrill);
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 $('drillQuit').addEventListener('click',drillEnd);
 document.addEventListener('keydown',e=>{
